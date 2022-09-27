@@ -55,7 +55,6 @@ def expert_std(gdf, sci_name):
     # Name matching records with API
     class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
     invalid_records = []
-    bad_match = []
     family_list = []
 
     for index, row in gdf.iterrows():
@@ -67,14 +66,14 @@ def expert_std(gdf, sci_name):
 
         else:
             if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
-                bad_match.append(row[f"{sci_name}"])
+                invalid_records.append(row[f"{sci_name}"])
             else:
                 family_list.append(match['family'].upper())
 
     # Creating geoDataFrame with only valid records
-    if len(invalid_records) > 0 or len(bad_match) > 0:
-        expert_valid = gdf[~gdf[f"{sci_name}"].isin(invalid_records or bad_match)]
-        print(f'{len(bad_match) + len(invalid_records)} low quality records have been removed from the data.')
+    if len(invalid_records) > 0:
+        expert_valid = gdf[~gdf[f"{sci_name}"].isin(invalid_records)]
+        print(f'{len(invalid_records)} low quality records have been removed from the data.')
     else:
         print('All records are valid and have good matches.')
         expert_valid = gdf
@@ -83,7 +82,7 @@ def expert_std(gdf, sci_name):
     expert_valid[['Genus', 'Species', 'Subspecies']] = expert_valid[f"{sci_name}"].str.split(' ', n=2, expand=True)
 
     # Moving values from expert dataset into appropriate columns
-    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  # filling in dataframe with unique SPCODE > 30000
+    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  #  unique SPCODE > 30000
     standard_gdf["type"] = "e"  # for 'expert'
     standard_gdf["scientific"] = expert_valid[f"{sci_name}"]
     standard_gdf["family"] = family_list
