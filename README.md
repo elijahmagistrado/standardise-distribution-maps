@@ -1,4 +1,4 @@
-# expert-shp-std
+# expert-standard
 Standardising expert distribution shapefiles before uploading into the ALA.
 
 ## Usage
