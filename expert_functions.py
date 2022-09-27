@@ -4,6 +4,7 @@ import geopandas as gpd
 
 
 def expert_std(gdf, sci_name):
+
     # Creating empty data frame
     standard_gdf = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
@@ -47,6 +48,7 @@ def expert_std(gdf, sci_name):
          }.items()
          }
     )
+
     # Setting active geometry column
     standard_gdf = standard_gdf.set_geometry("the_geom")
 
@@ -55,6 +57,7 @@ def expert_std(gdf, sci_name):
     invalid_records = []
     bad_match = []
     family_list = []
+
     for index, row in gdf.iterrows():
         species = requests.get(class_api, params={'scientificName': f'{row[f"{sci_name}"]}'})
         match = species.json()
@@ -80,7 +83,7 @@ def expert_std(gdf, sci_name):
     expert_valid[['Genus', 'Species', 'Subspecies']] = expert_valid[f"{sci_name}"].str.split(' ', n=2, expand=True)
 
     # Moving values from expert dataset into appropriate columns
-    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  # fllling in dataframe with unique SPCODE > 30000
+    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  # filling in dataframe with unique SPCODE > 30000
     standard_gdf["type"] = "e"  # for 'expert'
     standard_gdf["scientific"] = expert_valid[f"{sci_name}"]
     standard_gdf["family"] = family_list
