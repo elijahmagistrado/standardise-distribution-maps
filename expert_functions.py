@@ -3,7 +3,7 @@ import requests
 import geopandas as gpd
 
 
-def expert_std(gdf, sci_name):
+def expert_std(gdf, sci_name, data_resource_uid):
 
     # Creating empty data frame
     standard_gdf = gpd.GeoDataFrame(
@@ -89,7 +89,7 @@ def expert_std(gdf, sci_name):
     standard_gdf["the_geom"] = expert_valid["geometry"]
     standard_gdf["area_km"] = expert_valid["SHAPE_Area"]
     standard_gdf["genus_name"] = expert_valid["Genus"]
-    standard_gdf["data_resource_uid"] = ""
+    standard_gdf["data_resource_uid"] = f"{data_resource_uid}"
 
     # Output shapefile
     standard_gdf.to_file("standardised.shp")
