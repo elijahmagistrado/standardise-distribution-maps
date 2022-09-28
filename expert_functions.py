@@ -82,13 +82,14 @@ def expert_std(gdf, sci_name):
     expert_valid[['Genus', 'Species', 'Subspecies']] = expert_valid[f"{sci_name}"].str.split(' ', n=2, expand=True)
 
     # Moving values from expert dataset into appropriate columns
-    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  #  unique SPCODE > 30000
+    standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  # unique SPCODE > 30000
     standard_gdf["type"] = "e"  # for 'expert'
     standard_gdf["scientific"] = expert_valid[f"{sci_name}"]
     standard_gdf["family"] = family_list
     standard_gdf["the_geom"] = expert_valid["geometry"]
     standard_gdf["area_km"] = expert_valid["SHAPE_Area"]
     standard_gdf["genus_name"] = expert_valid["Genus"]
+    standard_gdf["data_resource_uid"] = ""
 
     # Output shapefile
     standard_gdf.to_file("standardised.shp")
