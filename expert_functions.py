@@ -2,11 +2,8 @@ import pandas as pd
 import requests
 import geopandas as gpd
 
-
-def vector_standard(gdf, sci_name_column, data_resource_uid):
-
-    # Creating empty data frame
-    standard_gdf = gpd.GeoDataFrame(
+# Creating empty data frame template
+standard_gdf = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
              "gid": "int",
@@ -49,8 +46,10 @@ def vector_standard(gdf, sci_name_column, data_resource_uid):
          }
     )
 
-    # Setting active geometry column
-    standard_gdf = standard_gdf.set_geometry("the_geom")
+# Setting active geometry column
+standard_gdf = standard_gdf.set_geometry("the_geom")
+
+def vector_standard(gdf, sci_name_column, data_resource_uid):
 
     # Name matching records with API
     class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
