@@ -3,7 +3,7 @@ import requests
 import geopandas as gpd
 
 
-def expert_std(gdf, sci_name, data_resource_uid):
+def vector_standard(gdf, sci_name_column, data_resource_uid):
 
     # Creating empty data frame
     standard_gdf = gpd.GeoDataFrame(
@@ -58,38 +58,39 @@ def expert_std(gdf, sci_name, data_resource_uid):
     family_list = []
 
     for index, row in gdf.iterrows():
-        species = requests.get(class_api, params={'scientificName': f'{row[f"{sci_name}"]}'})
+        species = requests.get(class_api, params={'scientificName': f'{row[f"{sci_name_column}"]}'})
         match = species.json()
 
         if not match['success']:
-            invalid_records.append(row[f"{sci_name}"])
+            invalid_records.append(row[f"{sci_name_column}"])
 
         else:
             if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
-                invalid_records.append(row[f"{sci_name}"])
+                invalid_records.append(row[f"{sci_name_column}"])
             else:
                 family_list.append(match['family'].upper())
 
     # Creating geoDataFrame with only valid records
     if len(invalid_records) > 0:
-        expert_valid = gdf[~gdf[f"{sci_name}"].isin(invalid_records)]
+        expert_valid = gdf[~gdf[f"{sci_name_column}"].isin(invalid_records)]
         print(f'{len(invalid_records)} low quality records have been removed from the data.')
     else:
         print('All records are valid and have good matches.')
         expert_valid = gdf
 
     # Splitting scientific name into its
-    expert_valid[['Genus', 'Species', 'Subspecies']] = expert_valid[f"{sci_name}"].str.split(' ', n=2, expand=True)
+    expert_valid[['Genus', 'Species', 'Subspecies']] = expert_valid[f"{sci_name_column}"].str.split(' ', n=2, expand=True)
 
     # Moving values from expert dataset into appropriate columns
     standard_gdf["spcode"] = range(30001, 30001 + len(expert_valid))  # unique SPCODE > 30000
     standard_gdf["type"] = "e"  # for 'expert'
-    standard_gdf["scientific"] = expert_valid[f"{sci_name}"]
+    standard_gdf["scientific"] = expert_valid[f"{sci_name_column}"]
     standard_gdf["family"] = family_list
     standard_gdf["the_geom"] = expert_valid["geometry"]
     standard_gdf["area_km"] = expert_valid["SHAPE_Area"]
     standard_gdf["genus_name"] = expert_valid["Genus"]
     standard_gdf["data_resource_uid"] = f"{data_resource_uid}"
 
-    # Output shapefile
-    standard_gdf.to_file("standardised.shp")
+    # Return value of shapefile
+    return standard_gdf
+
