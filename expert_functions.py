@@ -16,16 +16,20 @@ class ExpertDistMap:
 
     def compile(self):
 
-        compiled = gpd.GeoDataFrame()
+        merged = gpd.GeoDataFrame()
         os.chdir(self.file_path)
 
-        for shapefile in glob.glob('*.shp'):
-            sf = gpd.read_file(shapefile)
-            compiled.append(sf)
-        return compiled
+        for root, dirs, files in os.walk(self.file_path):
+            for file in files:
+                if file.endswith('.shp'):
+                    sf = gpd.read_file(os.path.join(root, file))
+                    merged = merged.append(sf)
+
+        print(merged)
+        return merged
 
     def simplify(self):
-        simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
+        # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
 
     def name_match(self):
         # Name matching records with API
@@ -46,6 +50,7 @@ class ExpertDistMap:
 
     def polygon_standard(self):
         # Calling name-matching function first
+        ExpertDistMap.compile(self)
         ExpertDistMap.name_match(self)
         # Creating geoDataFrame with only valid records
         if len(self.invalid_records) > 0:
@@ -120,7 +125,7 @@ class ExpertDistMap:
     template = template.set_geometry("the_geom")
 
 
-test_1 = ExpertDistMap("Shapefile/Austronomus_australis", "Taxon", "dr19999")
+test_1 = ExpertDistMap("/Users/elijah/PycharmProjects/expert-standard/Shapefile", "Taxon", "dr19999")
 compiled = test_1.compile()
 # test_subset = test_shp.head(20)
 # test_std = ExpertDistMap(test_subset, "SCI_NAME", "dr19917")
