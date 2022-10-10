@@ -7,13 +7,16 @@ import os
 
 class ExpertDistMap:
 
-    def __init__(self, file_path, sci_name_column, druid):
+    def __init__(self, file_path, sci_name_column, druid, dist_type_col=None, current_range=None):
+        self.merged = None
         self.sci_name = sci_name_column
         self.druid = druid
         self.invalid_records = []
         self.family_list = []
         self.file_path = file_path
-        self.gdf = gpd.read_file(file_path)
+        self.standard = None
+        self.dist_type_col = dist_type_col if dist_type_col is not None else None
+        self.current_range = current_range if current_range is not None else None
 
     def compile(self):
 
@@ -24,11 +27,12 @@ class ExpertDistMap:
             for file in files:
                 if file.endswith('.shp'):
                     sf = gpd.read_file(os.path.join(root, file))
+                    if sf[f'{self.dist_type_col}'] is not None:
+                        sf = sf.loc[sf[f'{self.dist_type_col}'] == f'{self.current_range}']
                     sf = sf.to_crs(epsg=3857)
                     merged = merged.append(sf)
-
-        merged = merged.set_crs(epsg=3857)
-        return merged
+        merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
+        self.merged = merged.set_crs(epsg=3857)
 
     # def simplify(self):
     #     # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
@@ -37,7 +41,7 @@ class ExpertDistMap:
         # Name matching records with API
         class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
 
-        for index, row in self.gdf.iterrows():
+        for index, row in self.merged.iterrows():
             species = requests.get(class_api, params={'scientificName': f'{row[f"{self.sci_name}"]}'})
             match = species.json()
 
@@ -51,19 +55,20 @@ class ExpertDistMap:
                     self.family_list.append(match['family'].upper())
 
     def polygon_standard(self):
+        ExpertDistMap.compile(self)
         # Calling name-matching function first
         ExpertDistMap.name_match(self)
         # Creating geoDataFrame with only valid records
         if len(self.invalid_records) > 0:
-            valid_records = self[~self[f"{self.sci_name}"].isin(self.invalid_records)]
+            valid_records = self.merged[~self.merged[f"{self.sci_name}"].isin(self.invalid_records)]
             print(f'{len(self.invalid_records)} low quality records have been removed from the data.')
         else:
             print('All records are valid and have good matches.')
-            valid_records = self.gdf
+            valid_records = self.merged
 
         # Splitting scientific name into its components
-        valid_records[['Genus', 'Species']] = valid_records[f"{self.sci_name}"].str.split(' ', n=2,
-                                                                                          expand=True)
+        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
+        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
         # Moving values from expert dataset into appropriate columns
         standard = ExpertDistMap.template
 
@@ -76,7 +81,7 @@ class ExpertDistMap:
         standard["data_resource_uid"] = f"{self.druid}"
 
         # Return value of shapefile
-        return standard
+        self.standard = standard
 
     # Creating empty data frame template
     template = gpd.GeoDataFrame(
@@ -124,5 +129,3 @@ class ExpertDistMap:
 
     # Setting active geometry column
     template = template.set_geometry("the_geom")
-
-
