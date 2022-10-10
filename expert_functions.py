@@ -13,6 +13,7 @@ class ExpertDistMap:
         self.invalid_records = []
         self.family_list = []
         self.file_path = file_path
+        self.gdf = gpd.read_file(file_path)
 
     def compile(self):
 
@@ -23,13 +24,14 @@ class ExpertDistMap:
             for file in files:
                 if file.endswith('.shp'):
                     sf = gpd.read_file(os.path.join(root, file))
+                    sf = sf.to_crs(epsg=3857)
                     merged = merged.append(sf)
 
-        print(merged)
+        merged = merged.set_crs(epsg=3857)
         return merged
 
-    def simplify(self):
-        # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
+    # def simplify(self):
+    #     # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
 
     def name_match(self):
         # Name matching records with API
@@ -50,7 +52,6 @@ class ExpertDistMap:
 
     def polygon_standard(self):
         # Calling name-matching function first
-        ExpertDistMap.compile(self)
         ExpertDistMap.name_match(self)
         # Creating geoDataFrame with only valid records
         if len(self.invalid_records) > 0:
@@ -58,11 +59,11 @@ class ExpertDistMap:
             print(f'{len(self.invalid_records)} low quality records have been removed from the data.')
         else:
             print('All records are valid and have good matches.')
-            valid_records = self
+            valid_records = self.gdf
 
         # Splitting scientific name into its components
-        valid_records[['Genus', 'Species', 'Subspecies']] = valid_records[f"{self.sci_name}"].str.split(' ', n=2,
-                                                                                                        expand=True)
+        valid_records[['Genus', 'Species']] = valid_records[f"{self.sci_name}"].str.split(' ', n=2,
+                                                                                          expand=True)
         # Moving values from expert dataset into appropriate columns
         standard = ExpertDistMap.template
 
@@ -125,8 +126,3 @@ class ExpertDistMap:
     template = template.set_geometry("the_geom")
 
 
-test_1 = ExpertDistMap("/Users/elijah/PycharmProjects/expert-standard/Shapefile", "Taxon", "dr19999")
-compiled = test_1.compile()
-# test_subset = test_shp.head(20)
-# test_std = ExpertDistMap(test_subset, "SCI_NAME", "dr19917")
-# test_std.polygon_standard()
