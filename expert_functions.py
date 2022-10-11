@@ -15,6 +15,7 @@ class ExpertDistMap:
 
         self.invalid_records = []
         self.family_list = []
+        self.valid_records = None
         self.merged = None
         self.standard = None
 
@@ -56,13 +57,6 @@ class ExpertDistMap:
                 else:
                     self.family_list.append(match['family'].upper())
 
-    def polygon_standard(self, file_name):
-        # Used to standardise vector data
-
-        # Combining all shapefiles and name-matching first
-        ExpertDistMap.compile(self)
-        ExpertDistMap.name_match(self)
-
         # Creating geoDataFrame with only valid records
         if len(self.invalid_records) > 0:
             valid_records = self.merged[~self.merged[f"{self.sci_name}"].isin(self.invalid_records)]
@@ -75,19 +69,27 @@ class ExpertDistMap:
         valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
         valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
 
+        self.valid_records = valid_records
+
+    def assemble(self):
         # Moving values from expert dataset into appropriate columns
         standard = ExpertDistMap.template
 
-        standard["spcode"] = range(30001, 30001 + len(valid_records))  # unique SPCODE > 30000
+        standard["spcode"] = range(30001, 30001 + len(self.valid_records))  # unique SPCODE > 30000
         standard["type"] = "e"  # for 'expert'
-        standard["scientific"] = valid_records[f"{self.sci_name}"]
+        standard["scientific"] = self.valid_records[f"{self.sci_name}"]
         standard["family"] = self.family_list
-        standard["the_geom"] = valid_records["geometry"]
-        standard["genus_name"] = valid_records["Genus"]
+        standard["the_geom"] = self.valid_records["geometry"]
+        standard["genus_name"] = self.valid_records["Genus"]
 
         # Return value of shapefile
         self.standard = standard.set_crs(epsg=4326)
-        standard.to_file(f'{file_name}')
+
+    def polygon_standard(self, file_name):
+        ExpertDistMap.compile(self)
+        ExpertDistMap.name_match(self)
+        ExpertDistMap.assemble(self)
+        self.standard.to_file(f'{file_name}')
 
     # Creating empty data frame template
     template = gpd.GeoDataFrame(
