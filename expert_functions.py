@@ -7,10 +7,9 @@ import os
 
 class ExpertDistMap:
 
-    def __init__(self, file_path, sci_name_column, druid, dist_type_col=None, current_range=None):
+    def __init__(self, file_path, sci_name_column, dist_type_col=None, current_range=None):
         self.file_path = file_path
         self.sci_name = sci_name_column
-        self.druid = druid
         self.dist_type_col = dist_type_col if dist_type_col is not None else None
         self.current_range = current_range if current_range is not None else None
 
@@ -57,7 +56,7 @@ class ExpertDistMap:
                 else:
                     self.family_list.append(match['family'].upper())
 
-    def polygon_standard(self):
+    def polygon_standard(self, file_name):
         # Used to standardise vector data
 
         # Combining all shapefiles and name-matching first
@@ -85,10 +84,10 @@ class ExpertDistMap:
         standard["family"] = self.family_list
         standard["the_geom"] = valid_records["geometry"]
         standard["genus_name"] = valid_records["Genus"]
-        standard["data_resource_uid"] = f"{self.druid}"
 
         # Return value of shapefile
         self.standard = standard.set_crs(epsg=4326)
+        standard.to_file(f'{file_name}')
 
     # Creating empty data frame template
     template = gpd.GeoDataFrame(
