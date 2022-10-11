@@ -14,6 +14,7 @@ class ExpertDistMap:
 
         self.invalid_records = []
         self.family_list = []
+        self.common_names = []
         self.valid_records = None
         self.merged = None
         self.standard = None
@@ -35,9 +36,6 @@ class ExpertDistMap:
 
         # Grouping polygons of the same taxon to a multipolygon
         self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
-
-    # def simplify(self):
-    #     # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
 
     def name_match(self):
         # Name matching records with API
@@ -65,10 +63,10 @@ class ExpertDistMap:
             valid_records = self.merged
 
         # Splitting scientific name into its components
-        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
-        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
+        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True).loc[0]
+        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True).loc[1]
 
-        self.valid_records = valid_records
+        self.valid_records = valid_records.reset_index(drop=True)
 
     def assemble(self):
         # Moving values from expert dataset into appropriate columns
@@ -80,6 +78,7 @@ class ExpertDistMap:
         standard["family"] = self.family_list
         standard["the_geom"] = self.valid_records["geometry"]
         standard["genus_name"] = self.valid_records["Genus"]
+        standard["specific_n"] = self.valid_records['Species']
 
         # Setting final shapefile to correct CRS
         self.standard = standard.set_crs(epsg=4326)
