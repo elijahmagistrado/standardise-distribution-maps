@@ -62,11 +62,12 @@ class ExpertDistMap:
             print('All records are valid and have good matches.')
             valid_records = self.merged
 
+        valid_records.reset_index(drop=True)
         # Splitting scientific name into its components
-        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True).loc[0]
-        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True).loc[1]
+        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
+        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
 
-        self.valid_records = valid_records.reset_index(drop=True)
+        self.valid_records = valid_records
 
     def assemble(self):
         # Moving values from expert dataset into appropriate columns
