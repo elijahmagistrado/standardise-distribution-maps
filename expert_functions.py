@@ -1,7 +1,6 @@
 import pandas as pd
 import requests
 import geopandas as gpd
-import glob
 import os
 
 
@@ -31,8 +30,8 @@ class ExpertDistMap:
                     sf = gpd.read_file(os.path.join(root, file))
                     if sf[f'{self.dist_type}'] is not None:
                         sf = sf.loc[sf[f'{self.dist_type}'] == f'{self.current}']
-                    sf = sf.to_crs(epsg=4326)
-                    merged = merged.append(sf)
+                    sf = sf.to_crs(epsg=4326)  # Reproject to WGS84
+                    merged = pd.concat([merged, sf])
 
         # Grouping polygons of the same taxon to a multipolygon
         self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
@@ -82,7 +81,7 @@ class ExpertDistMap:
         standard["the_geom"] = self.valid_records["geometry"]
         standard["genus_name"] = self.valid_records["Genus"]
 
-        # Return value of shapefile
+        # Setting final shapefile to correct CRS
         self.standard = standard.set_crs(epsg=4326)
 
     def polygon_standard(self, file_name):
