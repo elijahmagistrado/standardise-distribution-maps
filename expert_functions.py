@@ -31,12 +31,11 @@ class ExpertDistMap:
                     sf = gpd.read_file(os.path.join(root, file))
                     if sf[f'{self.dist_type_col}'] is not None:
                         sf = sf.loc[sf[f'{self.dist_type_col}'] == f'{self.current_range}']
-                    sf = sf.to_crs(epsg=3857)
+                    sf = sf.to_crs(epsg=4326)
                     merged = merged.append(sf)
 
         # Grouping polygons of the same taxon to a multipolygon
-        merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
-        self.merged = merged.set_crs(epsg=3857)
+        self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
 
     # def simplify(self):
     #     # simple = gpd.GeoDataFrame.simplify(self.gdf, 1)
@@ -89,48 +88,20 @@ class ExpertDistMap:
         standard["data_resource_uid"] = f"{self.druid}"
 
         # Return value of shapefile
-        self.standard = standard
+        self.standard = standard.set_crs(epsg=4326)
 
     # Creating empty data frame template
     template = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
-             "gid": "int",
              "spcode": "int",
              "scientific": "str",
-             "authority_": "str",
              "common_nam": "str",
              "family": "str",
              "genus_name": "str",
              "specific_n": "str",
-             "min_depth": "int",
-             "max_depth": "int",
-             "pelagic_fl": "int",
-             "estuarine_fl": "bool",
-             "coastal_fl": "bool",
-             "desmersal_fl": "bool",
-             "metadata_u": "str",
-             "wmsurl": "str",
-             "lsid": "str",
-             "family_lsid": "str",
-             "genus_lsid": "str",
-             "caab_species_number": "str",
-             "caab_family_number": "str",
              "the_geom": "str",
-             "area_name": "str",
-             "pid": "str",
-             "type": "str",
-             "area_km": "float",
-             "notes": "str",
-             "geom_idx": "int",
-             "group_name": "str",
-             "genus_exemplar": "bool",
-             "family_exemplar": "bool",
-             "data_resource_uid": "str",
-             "image_quality": "str",
-             "bounding_box": "str",
-             "endemic": "bool",
-             "the_geom_orig": "str"
+             "type": "str"
          }.items()
          }
     )
