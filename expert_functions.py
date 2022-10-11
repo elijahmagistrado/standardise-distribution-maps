@@ -7,11 +7,11 @@ import os
 
 class ExpertDistMap:
 
-    def __init__(self, file_path, sci_name_column, dist_type_col=None, current_range=None):
+    def __init__(self, file_path, sci_name_column, dist_type=None, current=None):
         self.file_path = file_path
         self.sci_name = sci_name_column
-        self.dist_type_col = dist_type_col if dist_type_col is not None else None
-        self.current_range = current_range if current_range is not None else None
+        self.dist_type = dist_type if dist_type is not None else None
+        self.current = current if current is not None else None
 
         self.invalid_records = []
         self.family_list = []
@@ -29,8 +29,8 @@ class ExpertDistMap:
             for file in files:
                 if file.endswith('.shp'):
                     sf = gpd.read_file(os.path.join(root, file))
-                    if sf[f'{self.dist_type_col}'] is not None:
-                        sf = sf.loc[sf[f'{self.dist_type_col}'] == f'{self.current_range}']
+                    if sf[f'{self.dist_type}'] is not None:
+                        sf = sf.loc[sf[f'{self.dist_type}'] == f'{self.current}']
                     sf = sf.to_crs(epsg=4326)
                     merged = merged.append(sf)
 
