@@ -15,8 +15,8 @@ class ExpertDistMap:
         self.invalid_records = []
         self.family_list = []
         self.common_names = []
-        self.valid_records = None
-        self.merged = None
+        self.valid_records = []
+        self.merged = gpd.GeoDataFrame()
         self.standard = None
 
     def compile(self):
@@ -29,7 +29,7 @@ class ExpertDistMap:
             for file in files:
                 if file.endswith('.shp'):
                     sf = gpd.read_file(os.path.join(root, file))
-                    if sf[f'{self.dist_type}'] is not None:
+                    if self.dist_type is not None:
                         sf = sf.loc[sf[f'{self.dist_type}'] == f'{self.current}']
                     sf = sf.to_crs(epsg=4326)  # Reproject to WGS84
                     merged = pd.concat([merged, sf])
