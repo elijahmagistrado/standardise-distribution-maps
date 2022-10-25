@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 import geopandas as gpd
 import os
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class ExpertDistMap:
 
@@ -36,38 +36,54 @@ class ExpertDistMap:
 
         # Grouping polygons of the same taxon to a multipolygon
         self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
+        pass
 
     def name_match(self):
         # Name matching records with API
         class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
+        name_list = self.merged[f'{self.sci_name}'].tolist()
 
-        for index, row in self.merged.iterrows():
-            species = requests.get(class_api, params={'scientificName': f'{row[f"{self.sci_name}"]}'})
-            match = species.json()
+        def make_request(name):
+            with requests.get(class_api, params={'scientificName': {name}}) as match:
+                return match.json()
 
-            if not match['success']:
-                self.invalid_records.append(row[f"{self.sci_name}"])
+        with ThreadPoolExecutor() as executor:
+            species_info = []
+            futures = {executor.submit(make_request, name): name for name in name_list}
+            for future in as_completed(futures):
+                data = future.result()
+                species_info.append(data)
 
-            else:
-                if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
-                    self.invalid_records.append(row[f"{self.sci_name}"])
-                else:
-                    self.family_list.append(match['family'].upper())
+        pass
 
-        # Creating geoDataFrame with only valid records
-        if len(self.invalid_records) > 0:
-            valid_records = self.merged[~self.merged[f"{self.sci_name}"].isin(self.invalid_records)]
-            print(f'{len(self.invalid_records)} low quality records have been removed from the data.')
-        else:
-            print('All records are valid and have good matches.')
-            valid_records = self.merged
 
-        valid_records.reset_index(drop=True)
-        # Splitting scientific name into its components
-        valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
-        valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
-
-        self.valid_records = valid_records
+        # for index, row in self.merged.iterrows():
+        #     species = requests.get(class_api, params={'scientificName': f'{row[f"{self.sci_name}"]}'})
+        #     match = species.json()
+        #
+        #     if not match['success']:
+        #         self.invalid_records.append(row[f"{self.sci_name}"])
+        #
+        #     else:
+        #         if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
+        #             self.invalid_records.append(row[f"{self.sci_name}"])
+        #         else:
+        #             self.family_list.append(match['family'].upper())
+        #
+        # # Creating geoDataFrame with only valid records
+        # if len(self.invalid_records) > 0:
+        #     valid_records = self.merged[~self.merged[f"{self.sci_name}"].isin(self.invalid_records)]
+        #     print(f'{len(self.invalid_records)} low quality records have been removed from the data.')
+        # else:
+        #     print('All records are valid and have good matches.')
+        #     valid_records = self.merged
+        #
+        # valid_records.reset_index(drop=True)
+        # # Splitting scientific name into its components
+        # valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
+        # valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
+        #
+        # self.valid_records = valid_records
 
     def assemble(self):
         # Moving values from expert dataset into appropriate columns
