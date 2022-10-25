@@ -38,6 +38,19 @@ class ExpertDistMap:
         # Grouping polygons of the same taxon to a multipolygon
         self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
 
+    # def simplify(self):
+    #     polygons = self.merged['geometry']
+    #
+    #     for multipolygon in polygons:
+    #         polygons = list(multipolygon)
+    #         for polygon in polygons:
+    #
+    #         pass
+    #         # polygon.simplify(0.01)
+    #         # polygon.nlargest(10, "first")
+    #
+    #     pass
+
     def name_match(self):
         # Name matching records with API
         class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
@@ -65,6 +78,7 @@ class ExpertDistMap:
             self.valid_records = valid_records
         else:
             self.valid_records = self.merged
+        pass
 
     def assemble(self):
 
@@ -85,6 +99,7 @@ class ExpertDistMap:
 
     def polygon_standard(self, file_name):
         ExpertDistMap.merge(self)
+        # ExpertDistMap.simplify(self)
         ExpertDistMap.name_match(self)
         ExpertDistMap.assemble(self)
         self.standard.to_file(f'{file_name}')
