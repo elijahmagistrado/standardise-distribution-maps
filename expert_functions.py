@@ -48,11 +48,23 @@ class ExpertDistMap:
                 return match.json()
 
         with ThreadPoolExecutor() as executor:
-            species_info = []
+            good_matches = []
+            family_list = []
             futures = {executor.submit(make_request, name): name for name in name_list}
             for future in as_completed(futures):
                 data = future.result()
-                species_info.append(data)
+                if data['success']:
+                    if data['matchType'] == 'exactMatch' or data['matchType'] == 'canonicalMatch':
+                        good_matches.append(data['scientificName'])
+                        family_list.append(data['family'].upper())
+
+        if len(self.merged) != len(good_matches):
+            valid_records = self.merged[self.merged[f'{self.sci_name}'].isin(good_matches)]
+            invalid_records = self.merged[~self.merged[f'{self.sci_name}'].isin(good_matches)]
+            print(f'{len(invalid_records)} low quality record(s) removed')
+            self.valid_records = valid_records.reset_index(drop=True)
+        else:
+            self.valid_records = self.merged
 
         pass
 
