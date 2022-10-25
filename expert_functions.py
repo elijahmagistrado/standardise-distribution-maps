@@ -4,6 +4,7 @@ import geopandas as gpd
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 class ExpertDistMap:
 
     def __init__(self, file_path, sci_name_column, dist_type=None, current=None):
@@ -17,9 +18,9 @@ class ExpertDistMap:
         self.common_names = []
         self.valid_records = []
         self.merged = gpd.GeoDataFrame()
-        self.standard = None
+        self.standard = gpd.GeoDataFrame()
 
-    def compile(self):
+    def merge(self):
         # Combines multiple shapefiles into one
         merged = gpd.GeoDataFrame()
         os.chdir(self.file_path)
@@ -36,7 +37,6 @@ class ExpertDistMap:
 
         # Grouping polygons of the same taxon to a multipolygon
         self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
-        pass
 
     def name_match(self):
         # Name matching records with API
@@ -49,71 +49,42 @@ class ExpertDistMap:
 
         with ThreadPoolExecutor() as executor:
             good_matches = []
-            family_list = []
             futures = {executor.submit(make_request, name): name for name in name_list}
             for future in as_completed(futures):
                 data = future.result()
                 if data['success']:
                     if data['matchType'] == 'exactMatch' or data['matchType'] == 'canonicalMatch':
-                        good_matches.append(data['scientificName'])
-                        family_list.append(data['family'].upper())
+                        if data['rank'] == 'species' or data['rank'] == 'subspecies':
+                            good_matches.append(data['scientificName'])
+                            self.family_list.append(data['family'].upper())
 
         if len(self.merged) != len(good_matches):
-            valid_records = self.merged[self.merged[f'{self.sci_name}'].isin(good_matches)]
-            invalid_records = self.merged[~self.merged[f'{self.sci_name}'].isin(good_matches)]
+            valid_records = self.merged[self.merged[f'{self.sci_name}'].isin(good_matches)].reset_index(drop=True)
+            invalid_records = self.merged[~self.merged[f'{self.sci_name}'].isin(good_matches)].reset_index(drop=True)
             print(f'{len(invalid_records)} low quality record(s) removed')
-            self.valid_records = valid_records.reset_index(drop=True)
+            self.valid_records = valid_records
         else:
             self.valid_records = self.merged
 
-        pass
-
-
-        # for index, row in self.merged.iterrows():
-        #     species = requests.get(class_api, params={'scientificName': f'{row[f"{self.sci_name}"]}'})
-        #     match = species.json()
-        #
-        #     if not match['success']:
-        #         self.invalid_records.append(row[f"{self.sci_name}"])
-        #
-        #     else:
-        #         if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
-        #             self.invalid_records.append(row[f"{self.sci_name}"])
-        #         else:
-        #             self.family_list.append(match['family'].upper())
-        #
-        # # Creating geoDataFrame with only valid records
-        # if len(self.invalid_records) > 0:
-        #     valid_records = self.merged[~self.merged[f"{self.sci_name}"].isin(self.invalid_records)]
-        #     print(f'{len(self.invalid_records)} low quality records have been removed from the data.')
-        # else:
-        #     print('All records are valid and have good matches.')
-        #     valid_records = self.merged
-        #
-        # valid_records.reset_index(drop=True)
-        # # Splitting scientific name into its components
-        # valid_records['Genus'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[0]
-        # valid_records['Species'] = valid_records[f"{self.sci_name}"].str.split(" ", expand=True)[1]
-        #
-        # self.valid_records = valid_records
-
     def assemble(self):
+
         # Moving values from expert dataset into appropriate columns
         standard = ExpertDistMap.template
 
         standard["spcode"] = range(30001, 30001 + len(self.valid_records))  # unique SPCODE > 30000
         standard["type"] = "e"  # for 'expert'
-        standard["scientific"] = self.valid_records[f"{self.sci_name}"]
+        standard["scientific"] = self.valid_records[f'{self.sci_name}']
         standard["family"] = self.family_list
         standard["the_geom"] = self.valid_records["geometry"]
-        standard["genus_name"] = self.valid_records["Genus"]
-        standard["specific_n"] = self.valid_records['Species']
+
+        standard["genus_name"] = standard["scientific"].str.split(" ", expand=True)[0]
+        standard["specific_n"] = standard["scientific"].str.split(" ", expand=True)[1]
 
         # Setting final shapefile to correct CRS
-        self.standard = standard.set_crs(epsg=4326)
+        self.standard = standard
 
     def polygon_standard(self, file_name):
-        ExpertDistMap.compile(self)
+        ExpertDistMap.merge(self)
         ExpertDistMap.name_match(self)
         ExpertDistMap.assemble(self)
         self.standard.to_file(f'{file_name}')
@@ -124,7 +95,6 @@ class ExpertDistMap:
          for c, t in {
              "spcode": "int",
              "scientific": "str",
-             "common_nam": "str",
              "family": "str",
              "genus_name": "str",
              "specific_n": "str",
