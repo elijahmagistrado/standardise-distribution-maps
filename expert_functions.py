@@ -58,17 +58,19 @@ class ExpertDistMap:
 
         def make_request(name):
             with requests.get(class_api, params={'scientificName': {name}}) as match:
-                return match.json()
+                return match.json(), name
 
         with ThreadPoolExecutor() as executor:
             good_matches = []
             futures = {executor.submit(make_request, name): name for name in name_list}
             for future in as_completed(futures):
-                data = future.result()
+                result = future.result()
+                data = result[0]
+                name = result[1]
                 if data['success']:
                     if data['matchType'] == 'exactMatch' or data['matchType'] == 'canonicalMatch':
                         if data['rank'] == 'species' or data['rank'] == 'subspecies':
-                            good_matches.append(data['scientificName'])
+                            good_matches.append(name)
                             self.family_list.append(data['family'].upper())
 
         if len(self.merged) != len(good_matches):
