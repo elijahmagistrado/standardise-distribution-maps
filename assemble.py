@@ -2,7 +2,7 @@ import geopandas as gpd
 import pandas as pd
 
 
-def assemble(sci_name, valid_records, family_list):
+def assemble(sci_name, valid_records, family_list, spcode):
     template = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
@@ -23,7 +23,7 @@ def assemble(sci_name, valid_records, family_list):
     # Moving values from expert dataset into appropriate columns
     standard = template
 
-    standard["spcode"] = range(30001, 30001 + len(valid_records))  # unique SPCODE > 30000
+    standard["spcode"] = range({spcode}, {spcode} + len(valid_records))  # unique SPCODE > 30000
     standard["type"] = "e"  # for 'expert'
     standard["scientific"] = valid_records[f'{sci_name}']
     standard["family"] = family_list

@@ -4,11 +4,11 @@ from assemble import assemble
 from simplify import simplify
 
 
-def vector_standard(file_path, sci_name, dist_type=None, current=None):
+def vector_standard(file_path, sci_name, spcode, dist_type=None, current=None):
     merged = merge(file_path, sci_name, dist_type, current)
     simplified = simplify(merged)
     valid_records, family_list = name_match(simplified, sci_name)
-    standard = assemble(sci_name, valid_records, family_list)
+    standard = assemble(sci_name, valid_records, family_list, spcode)
 
     return standard
 
