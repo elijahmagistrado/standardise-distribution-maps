@@ -38,8 +38,11 @@ def name_match(merged, sci_name):
         invalid_records = merged[~merged[f'{sci_name}'].isin(good_matches)].reset_index(drop=True)
         print(f'{len(invalid_records)} low quality record(s) removed.')
         print(f'{len(unsuccessful)} species not found in the ALA.')
+        print(unsuccessful)
         print(f'{len(bad_matches)} bad matches with ALA taxonomy.')
+        print(bad_matches)
         print(f'{len(bad_level)} record(s) not down to species or subspecies level.')
+        print(bad_level)
         valid_records = valid_records
     else:
         valid_records = merged
