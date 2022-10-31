@@ -2,7 +2,7 @@ import geopandas as gpd
 import pandas as pd
 
 
-def assemble(sci_name, valid_records, family_list, spcode):
+def assemble(sci_name, valid_records, matched_list, spcode):
     template = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
@@ -26,7 +26,7 @@ def assemble(sci_name, valid_records, family_list, spcode):
     standard["spcode"] = range(spcode, spcode + len(valid_records))  # unique SPCODE > 30000
     standard["type"] = "e"  # for 'expert'
     standard["scientific"] = valid_records[f'{sci_name}']
-    standard["family"] = family_list
+    standard["family"] = standard['scientific'].map(matched_list.set_index('species')['family'])
     standard["the_geom"] = valid_records["geometry"]
 
     standard["genus_name"] = standard["scientific"].str.split(" ", expand=True)[0]
