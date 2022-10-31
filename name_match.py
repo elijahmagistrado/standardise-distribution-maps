@@ -1,3 +1,4 @@
+import pandas as pd
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -6,7 +7,7 @@ def name_match(merged, sci_name):
     # Name matching records with API
     class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
     name_list = merged[f'{sci_name}'].tolist()
-    family_list = []
+    matched_list = pd.DataFrame()
 
     def make_request(name):
         with requests.get(class_api, params={'scientificName': {name}}) as match:
@@ -25,13 +26,17 @@ def name_match(merged, sci_name):
                 if data['matchType'] == 'exactMatch' or data['matchType'] == 'canonicalMatch':
                     if data['rank'] == 'species' or data['rank'] == 'subspecies':
                         good_matches.append(name)
-                        family_list.append(data['family'].upper())
+
+                        data_df = pd.DataFrame({"species": [name], "family": [data['family']]})
+                        matched_list = pd.concat([matched_list, data_df])
                     else:
                         bad_level.append(name)
                 else:
                     bad_matches.append(name)
             else:
                 unsuccessful.append(name)
+
+
 
     if len(merged) != len(good_matches):
         valid_records = merged[merged[f'{sci_name}'].isin(good_matches)].reset_index(drop=True)
@@ -47,4 +52,6 @@ def name_match(merged, sci_name):
     else:
         valid_records = merged
 
-    return valid_records, family_list
+    print(matched_list)
+
+    return valid_records, matched_list
