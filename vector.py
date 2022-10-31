@@ -1,7 +1,7 @@
-from merge import merge
-from name_match import name_match
-from assemble import assemble
-from simplify import simplify
+from .merge import merge
+from .name_match import name_match
+from .assemble import assemble
+from .simplify import simplify
 
 
 def vector_standard(file_path, sci_name, dist_type=None, current=None):
