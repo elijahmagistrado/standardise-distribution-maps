@@ -5,38 +5,25 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-class ExpertDistMap:
+def a(file_path, sci_name, dist_type, current):
+    raw_data = gpd.read_file()
+    os.chdir(file_path)
 
-    def __init__(self, file_path, sci_name_column, dist_type=None, current=None):
-        self.file_path = file_path
-        self.sci_name = sci_name_column
-        self.dist_type = dist_type if dist_type is not None else None
-        self.current = current if current is not None else None
-
-        self.invalid_records = []
-        self.family_list = []
-        self.common_names = []
-        self.valid_records = []
-        self.merged = gpd.GeoDataFrame()
-        self.standard = gpd.GeoDataFrame()
-
-    def merge(self):
+    def merge():
         # Combines multiple shapefiles into one
-        merged = gpd.GeoDataFrame()
-        os.chdir(self.file_path)
-
         # Reading all shapefiles in file path, including sub-folders
-        for root, dirs, files in os.walk(self.file_path):
+        global merged
+        for root, dirs, files in os.walk(file_path):
             for file in files:
                 if file.endswith('.shp'):
                     sf = gpd.read_file(os.path.join(root, file))
-                    if self.dist_type is not None:
-                        sf = sf.loc[sf[f'{self.dist_type}'] == f'{self.current}']
+                    if dist_type is not None:
+                        sf = sf.loc[sf[f'{dist_type}'] == f'{current}']
                     sf = sf.to_crs(epsg=4326)  # Reproject to WGS84
                     merged = pd.concat([merged, sf])
 
         # Grouping polygons of the same taxon to a multipolygon
-        self.merged = merged.dissolve(by=f'{self.sci_name}', as_index=False)
+        merged = merged.dissolve(by=f'{sci_name}', as_index=False)
 
     # def simplify(self):
     #     polygons = self.merged['geometry']
