@@ -23,7 +23,7 @@ def assemble(sci_name, valid_records, family_list, spcode):
     # Moving values from expert dataset into appropriate columns
     standard = template
 
-    standard["spcode"] = range({spcode}, {spcode} + len(valid_records))  # unique SPCODE > 30000
+    standard["spcode"] = range(spcode, spcode + len(valid_records))  # unique SPCODE > 30000
     standard["type"] = "e"  # for 'expert'
     standard["scientific"] = valid_records[f'{sci_name}']
     standard["family"] = family_list
