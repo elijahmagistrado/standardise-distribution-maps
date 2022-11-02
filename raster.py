@@ -8,50 +8,51 @@ from functools import partial
 
 
 def create_name_list(file_path):
-    name_list = []
-    input_names = []
-    output_rasters = []
-    output_polygons = []
-    merged_polygons = []
+    rasters = []
+    desampled = []
+    unmerged = []
 
     for root, dirs, files in os.walk(file_path):
         for file in files:
             if file.endswith('.asc'):
-                name_list.append(file)
-                input_names.append(os.path.join(root, file))
+                rasters.append(file)
 
-    for name in name_list:
+    for name in rasters:
         file_name = name.split('.')[0]
-        output_rasters.append(f'{file_path}\\{file_name}.tif')
-        output_polygons.append(f'{file_path}\\{file_name}.shp')
-        merged_polygons.append(f'{file_path}\\{file_name}Merged.shp')
-    return input_names, output_rasters, output_polygons, merged_polygons
+        desampled.append(f'{file_name}.tif')
+        unmerged.append(f'{file_name}.shp')
+
+    return rasters, desampled, unmerged
 
 
-def command_list(input_names, output_rasters, output_polygons, merged_polygons):
+def command_list(rasters, desampled, unmerged):
     preprocess_list = []
     polygonise_list = []
-    merge_list = []
     compression = '-co COMPRESS=DEFLATE -co PREDICTOR=2 -co ZLEVEL=9'
     desample_params = '-t_srs EPSG:4326 -dstnodata 0.0 -tr 0.05 0.05 -r max -of GTIFF'
-    merge_params = '-geomfield geometry -dialect SQLite'
 
-    for input_r, output_r, output_p, merged_p in zip(input_names, output_rasters, output_polygons, merged_polygons):
+
+    for input_r, output_r, output_p in zip(rasters, desampled, unmerged):
         preprocess_list.append(f'gdalwarp {desample_params} {compression} {input_r} {output_r}')
-        polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} a geometry')
-        merge_list.append(f'ogr2ogr {merge_params} -sql "select st_union(GEOMETRY) as geometry from {output_p.split(".")[0]}" {merged_p} {output_p}')
+        polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} OUTPUT species')
 
-    return preprocess_list, polygonise_list, merge_list
+    return preprocess_list, polygonise_list
 
 
-input_names, output_rasters, output_polygons, merged_polygons = create_name_list('F:\GISFiles\Crustaceans')
-preprocess, polygonise, merged = command_list(input_names, output_rasters, output_polygons, merged_polygons)
+rasters, desampled, unmerged = create_name_list(r'F:\GISFiles\test')
+preprocess, polygonise = command_list(rasters, desampled, unmerged)
 
 # processes = [subprocess.Popen(cmd, shell=True) for cmd in to_process]
 # for p in processes: p.wait()
 
-# pool = Pool(6)
-#
-# for i, returncode in enumerate(pool.imap(partial(subprocess.call, shell=True), to_process)):
-#     if returncode != 0:
-#         print('%d command failed: %d' % (i, returncode))
+def convert_to_polygon(file_path, preprocess, polygonise):
+    pool = Pool(6)
+
+    for i, returncode in enumerate(pool.imap(partial(subprocess.call, shell=True, cwd=fr'{file_path}'), preprocess)):
+        if returncode != 0:
+            print('%d command failed: %d' % (i, returncode))
+
+    for i, returncode in enumerate(pool.imap(partial(subprocess.call, shell=True, cwd=fr'{file_path}'), polygonise)):
+        if returncode != 0:
+            print('%d command failed: %d' % (i, returncode))
+
