@@ -34,7 +34,7 @@ def command_list(rasters, desampled, unmerged):
 
     for input_r, output_r, output_p in zip(rasters, desampled, unmerged):
         preprocess_list.append(f'gdalwarp {desample_params} {compression} {input_r} {output_r}')
-        polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} OUTPUT species')
+        polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} OUTPUT Taxon')
 
     return preprocess_list, polygonise_list
 
