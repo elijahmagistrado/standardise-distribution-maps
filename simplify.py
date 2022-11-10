@@ -7,7 +7,7 @@ def simplify(merged):
     b = merged.geometry
     # processed = gpd.GeoSeries()
 
-    c = b.simplify(0.01)
+    c = b.simplify(0.05)
     merged.geometry = c
     return merged
     # for multipolygon in b:
