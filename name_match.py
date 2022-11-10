@@ -52,6 +52,4 @@ def name_match(merged, sci_name):
     else:
         valid_records = merged
 
-    print(matched_list)
-
     return valid_records, matched_list
