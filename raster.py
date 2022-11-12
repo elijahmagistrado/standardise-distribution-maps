@@ -1,3 +1,5 @@
+import multiprocessing
+
 import rasterio as rio
 from osgeo import gdal, ogr, osr
 import os
@@ -5,6 +7,7 @@ import numpy as np
 import subprocess
 from multiprocessing.dummy import Pool
 from functools import partial
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 
 def create_name_list(file_path):
@@ -31,7 +34,6 @@ def command_list(rasters, desampled, unmerged):
     compression = '-co COMPRESS=DEFLATE -co PREDICTOR=2 -co ZLEVEL=9'
     desample_params = '-t_srs EPSG:4326 -dstnodata 0.0 -tr 0.05 0.05 -r max -of GTIFF'
 
-
     for input_r, output_r, output_p in zip(rasters, desampled, unmerged):
         preprocess_list.append(f'gdalwarp {desample_params} {compression} {input_r} {output_r}')
         polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} OUTPUT Taxon')
@@ -42,17 +44,17 @@ def command_list(rasters, desampled, unmerged):
 rasters, desampled, unmerged = create_name_list(r'F:\GISFiles\test')
 preprocess, polygonise = command_list(rasters, desampled, unmerged)
 
+
 # processes = [subprocess.Popen(cmd, shell=True) for cmd in to_process]
 # for p in processes: p.wait()
 
 def convert_to_polygon(file_path, preprocess, polygonise):
-    pool = Pool(6)
+    def send_command(command):
+        subprocess.run(command, cwd=fr'{file_path}', shell=True)
 
-    for i, returncode in enumerate(pool.imap(partial(subprocess.call, shell=True, cwd=fr'{file_path}'), preprocess)):
-        if returncode != 0:
-            print('%d command failed: %d' % (i, returncode))
+    with ThreadPoolExecutor() as executor:
+        for command in preprocess:
+            executor.submit(send_command, command)
 
-    for i, returncode in enumerate(pool.imap(partial(subprocess.call, shell=True, cwd=fr'{file_path}'), polygonise)):
-        if returncode != 0:
-            print('%d command failed: %d' % (i, returncode))
-
+        for command in polygonise:
+            executor.submit(send_command, command)
