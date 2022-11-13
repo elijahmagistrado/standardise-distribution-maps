@@ -15,9 +15,7 @@ def merge(file_path, sci_name, converted=bool, dist_type=None, current=None):
                 sf = gpd.read_file(os.path.join(root, file))
 
                 if converted:
-
                     sf = remove_small_parts(sf, sci_name)
-                    sf = sf.dissolve(by=sci_name, as_index=False)
                     sf[sci_name] = sf[sci_name].replace(1, file.split('_currentF.shp')[0].replace('_', ' '))
 
                 if dist_type is not None:
