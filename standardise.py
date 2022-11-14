@@ -4,7 +4,7 @@ from assemble import assemble
 from raster import create_name_list, command_list, convert_to_polygon
 
 
-def from_raster(file_path):
+def polygonise(file_path):
     # Polygonises all ESRI ASCII (.asc) rasters in supplied file directory
     rasters, desampled, unmerged = create_name_list(file_path)
     preprocess_list, polygonise_list = command_list(rasters, desampled, unmerged)
@@ -25,7 +25,7 @@ def vector_standard(file_path, sci_name, spcode, from_raster=False):
     return standard
 
 
-def export_shp(standard, file_name):
+def export_shp(gdf, file_name):
     # Exports GeoDataFrame into shapefile
     # file_name should include directory + name + .shp
-    standard.to_file(file_name)
+    gdf.to_file(file_name)
