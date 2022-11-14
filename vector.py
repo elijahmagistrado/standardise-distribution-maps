@@ -1,17 +1,31 @@
 from merge import merge
 from name_match import name_match
 from assemble import assemble
-from simplify import simplify
+from raster import create_name_list, command_list, convert_to_polygon
 
 
-def vector_standard(file_path, sci_name, spcode, dist_type=None, current=None):
-    merged = merge(file_path, sci_name, dist_type, current)
-    simplified = simplify(merged)
-    valid_records, family_list = name_match(simplified, sci_name)
+def from_raster(file_path):
+    # Polygonises all ESRI ASCII (.asc) rasters in supplied file directory
+    rasters, desampled, unmerged = create_name_list(file_path)
+    preprocess_list, polygonise_list = command_list(rasters, desampled, unmerged)
+    convert_to_polygon(file_path, preprocess_list, polygonise_list)
+
+
+def vector_standard(file_path, sci_name, spcode, from_raster=False):
+    # Standardises and merges shapefiles present in supplied file directory
+
+    # sci_name = (str) Name of column containing the scientific names of the species
+    # spcode = (int) Unique id number to add sequentially to each layer
+    # from_raster = (bool) True means the shapefiles were converted from rasters using the from_raster function
+
+    merged = merge(file_path, sci_name, from_raster)
+    valid_records, family_list = name_match(merged, sci_name)
     standard = assemble(sci_name, valid_records, family_list, spcode)
 
     return standard
 
 
 def export_shp(standard, file_name):
+    # Exports GeoDataFrame into shapefile
+    # file_name should include directory + name + .shp
     standard.to_file(file_name)

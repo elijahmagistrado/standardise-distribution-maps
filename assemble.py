@@ -3,6 +3,7 @@ import pandas as pd
 
 
 def assemble(sci_name, valid_records, matched_list, spcode):
+    # Creating template of standardised GeoDataFrame
     template = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
@@ -21,12 +22,14 @@ def assemble(sci_name, valid_records, matched_list, spcode):
     # Setting active geometry column
     template = template.set_geometry("the_geom")
 
+    # Retrieving species and genus name from scientific name
     valid_records['genus'] = valid_records[f'{sci_name}'].str.split(" ", expand=True)[0]
     valid_records['species'] = valid_records[f'{sci_name}'].str.split(" ", expand=True)[1]
 
+    # Filtering out invalid species names
     valid_records = valid_records.replace({'x': None, 'X': None, 'sp.': None})
 
-    # Moving values from expert dataset into appr opriate columns
+    # Moving corrected values from dataset into the template
     standard = template
 
     standard["spcode"] = range(spcode, spcode + len(valid_records))  # unique SPCODE > 30000

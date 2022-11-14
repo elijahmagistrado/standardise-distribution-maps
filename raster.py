@@ -1,16 +1,11 @@
-import multiprocessing
-
-import rasterio as rio
-from osgeo import gdal, ogr, osr
 import os
-import numpy as np
 import subprocess
-from multiprocessing.dummy import Pool
-from functools import partial
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 
 def create_name_list(file_path):
+    # Creates the list of file names from directory to be used in the commands below
+    # Detects rasters in the ESRI ASCII (.asc) format
     rasters = []
     desampled = []
     unmerged = []
@@ -29,9 +24,16 @@ def create_name_list(file_path):
 
 
 def command_list(rasters, desampled, unmerged):
-    preprocess_list = []
-    polygonise_list = []
+    # Generates a list of commands to be executed in subprocess threads
+    preprocess_list = []    # List of gdalwarp commands
+    polygonise_list = []    # List of gdal_polygonize.py commands
+
+    # Compression parameter used to reduce file size significantly
     compression = '-co COMPRESS=DEFLATE -co PREDICTOR=2 -co ZLEVEL=9'
+
+    # Parameters used to desample images to a resolution of 0.05 degrees (~5.56 km)
+    # 'Maximum' resampling method used to indicate presence/absence in a given pixel
+    # Also sets the correct CRS (WGS 84)
     desample_params = '-t_srs EPSG:4326 -dstnodata 0.0 -tr 0.05 0.05 -r max -of GTIFF'
 
     for input_r, output_r, output_p in zip(rasters, desampled, unmerged):
@@ -41,20 +43,19 @@ def command_list(rasters, desampled, unmerged):
     return preprocess_list, polygonise_list
 
 
-rasters, desampled, unmerged = create_name_list(r'F:\GISFiles\test')
-preprocess, polygonise = command_list(rasters, desampled, unmerged)
-
-
-# processes = [subprocess.Popen(cmd, shell=True) for cmd in to_process]
-# for p in processes: p.wait()
-
 def convert_to_polygon(file_path, preprocess, polygonise):
+    # Executes one command for each available thread simultaneously
     def send_command(command):
         subprocess.run(command, cwd=fr'{file_path}', shell=True)
 
     with ThreadPoolExecutor() as executor:
+
+        # Executing gdalwarp commands
+        # Outputs GeoTiff (.tif) file
         for command in preprocess:
             executor.submit(send_command, command)
 
+        # Executes gdal_polygonize.py commands
+        # Outputs a single ESRI shapefile (.shp) with separate parts
         for command in polygonise:
             executor.submit(send_command, command)
