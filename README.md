@@ -44,7 +44,7 @@ the same directory supplied. Note that the column name containing the scientific
 * **file_path : str**
   * File directory containing rasters
 
-## Usage
+### Usage
 ```
 from expert-standard.standardise import polygonise, vector_standard, export_shp
 
@@ -58,6 +58,5 @@ standardised.export_shp(r'C:\Users\Bob\Output\standardised.shp')
 # Starting with shapefiles
 standardised = vector_standard(r'C:\Users\Bob\Shapefiles', 'scientific_name', 30000)
 standardised.export_shp(r'C:\Users\Bob\Output\standardised.shp')
-
 ```
 
