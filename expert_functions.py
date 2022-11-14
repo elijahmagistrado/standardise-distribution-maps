@@ -1,93 +1,112 @@
 import pandas as pd
 import requests
 import geopandas as gpd
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Creating empty data frame template
-standard_gdf = gpd.GeoDataFrame(
-    {c: pd.Series(dtype=t)
-     for c, t in {
-         "gid": "int",
-         "spcode": "int",
-         "scientific": "str",
-         "authority_": "str",
-         "common_nam": "str",
-         "family": "str",
-         "genus_name": "str",
-         "specific_n": "str",
-         "min_depth": "int",
-         "max_depth": "int",
-         "pelagic_fl": "int",
-         "estuarine_fl": "bool",
-         "coastal_fl": "bool",
-         "desmersal_fl": "bool",
-         "metadata_u": "str",
-         "wmsurl": "str",
-         "lsid": "str",
-         "family_lsid": "str",
-         "genus_lsid": "str",
-         "caab_species_number": "str",
-         "caab_family_number": "str",
-         "the_geom": "str",
-         "area_name": "str",
-         "pid": "str",
-         "type": "str",
-         "area_km": "float",
-         "notes": "str",
-         "geom_idx": "int",
-         "group_name": "str",
-         "genus_exemplar": "bool",
-         "family_exemplar": "bool",
-         "data_resource_uid": "str",
-         "image_quality": "str",
-         "bounding_box": "str",
-         "endemic": "bool",
-         "the_geom_orig": "str"
-     }.items()
-     }
-)
 
-# Setting active geometry column
-standard_gdf = standard_gdf.set_geometry("the_geom")
+def a(file_path, sci_name, dist_type, current):
+    raw_data = gpd.read_file()
+    os.chdir(file_path)
 
-def vector_standard(gdf, sci_name_column, data_resource_uid):
-    # Name matching records with API
-    class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
-    invalid_records = []
-    family_list = []
+    def merge():
+        # Combines multiple shapefiles into one
+        # Reading all shapefiles in file path, including sub-folders
+        global merged
+        for root, dirs, files in os.walk(file_path):
+            for file in files:
+                if file.endswith('.shp'):
+                    sf = gpd.read_file(os.path.join(root, file))
+                    if dist_type is not None:
+                        sf = sf.loc[sf[f'{dist_type}'] == f'{current}']
+                    sf = sf.to_crs(epsg=4326)  # Reproject to WGS84
+                    merged = pd.concat([merged, sf])
 
-    for index, row in gdf.iterrows():
-        species = requests.get(class_api, params={'scientificName': f'{row[f"{sci_name_column}"]}'})
-        match = species.json()
+        # Grouping polygons of the same taxon to a multipolygon
+        merged = merged.dissolve(by=f'{sci_name}', as_index=False)
 
-        if not match['success']:
-            invalid_records.append(row[f"{sci_name_column}"])
+    # def simplify(self):
+    #     polygons = self.merged['geometry']
+    #
+    #     for multipolygon in polygons:
+    #         polygons = list(multipolygon)
+    #         for polygon in polygons:
+    #
+    #         pass
+    #         # polygon.simplify(0.01)
+    #         # polygon.nlargest(10, "first")
+    #
+    #     pass
 
+    def name_match(self):
+        # Name matching records with API
+        class_api = "https://namematching-ws.ala.org.au/api/searchByClassification"
+        name_list = self.merged[f'{self.sci_name}'].tolist()
+
+        def make_request(name):
+            with requests.get(class_api, params={'scientificName': {name}}) as match:
+                return match.json(), name
+
+        with ThreadPoolExecutor() as executor:
+            good_matches = []
+            futures = {executor.submit(make_request, name): name for name in name_list}
+            for future in as_completed(futures):
+                result = future.result()
+                data = result[0]
+                name = result[1]
+                if data['success']:
+                    if data['matchType'] == 'exactMatch' or data['matchType'] == 'canonicalMatch':
+                        if data['rank'] == 'species' or data['rank'] == 'subspecies':
+                            good_matches.append(name)
+                            self.family_list.append(data['family'].upper())
+
+        if len(self.merged) != len(good_matches):
+            valid_records = self.merged[self.merged[f'{self.sci_name}'].isin(good_matches)].reset_index(drop=True)
+            invalid_records = self.merged[~self.merged[f'{self.sci_name}'].isin(good_matches)].reset_index(drop=True)
+            print(f'{len(invalid_records)} low quality record(s) removed')
+            self.valid_records = valid_records
         else:
-            if match['matchType'] != 'exactMatch' and match['matchType'] != 'canonicalMatch':
-                invalid_records.append(row[f"{sci_name_column}"])
-            else:
-                family_list.append(match['family'].upper())
+            self.valid_records = self.merged
+        pass
 
-    # Creating geoDataFrame with only valid records
-    if len(invalid_records) > 0:
-        valid_records = gdf[~gdf[f"{sci_name_column}"].isin(invalid_records)]
-        print(f'{len(invalid_records)} low quality records have been removed from the data.')
-    else:
-        print('All records are valid and have good matches.')
-        valid_records = gdf
+    def assemble(self):
 
-    # Splitting scientific name into its components
-    valid_records[['Genus', 'Species', 'Subspecies']] = valid_records[f"{sci_name_column}"].str.split(' ', n=2,
-                                                                                                    expand=True)
+        # Moving values from expert dataset into appropriate columns
+        standard = ExpertDistMap.template
 
-    # Moving values from expert dataset into appropriate columns
-    standard_gdf["spcode"] = range(30001, 30001 + len(valid_records))  # unique SPCODE > 30000
-    standard_gdf["type"] = "e"  # for 'expert'
-    standard_gdf["scientific"] = valid_records[f"{sci_name_column}"]
-    standard_gdf["family"] = family_list
-    standard_gdf["the_geom"] = valid_records["geometry"]
-    standard_gdf["genus_name"] = valid_records["Genus"]
-    standard_gdf["data_resource_uid"] = f"{data_resource_uid}"
+        standard["spcode"] = range(30001, 30001 + len(self.valid_records))  # unique SPCODE > 30000
+        standard["type"] = "e"  # for 'expert'
+        standard["scientific"] = self.valid_records[f'{self.sci_name}']
+        standard["family"] = self.family_list
+        standard["the_geom"] = self.valid_records["geometry"]
 
-    # Return value of shapefile
-    return standard_gdf
+        standard["genus_name"] = standard["scientific"].str.split(" ", expand=True)[0]
+        standard["specific_n"] = standard["scientific"].str.split(" ", expand=True)[1]
+
+        # Setting final shapefile to correct CRS
+        self.standard = standard
+
+    def polygon_standard(self, file_name):
+        ExpertDistMap.merge(self)
+        # ExpertDistMap.simplify(self)
+        ExpertDistMap.name_match(self)
+        ExpertDistMap.assemble(self)
+        self.standard.to_file(f'{file_name}')
+
+    # Creating empty data frame template
+    template = gpd.GeoDataFrame(
+        {c: pd.Series(dtype=t)
+         for c, t in {
+             "spcode": "int",
+             "scientific": "str",
+             "family": "str",
+             "genus_name": "str",
+             "specific_n": "str",
+             "the_geom": "str",
+             "type": "str"
+         }.items()
+         }
+    )
+
+    # Setting active geometry column
+    template = template.set_geometry("the_geom")
