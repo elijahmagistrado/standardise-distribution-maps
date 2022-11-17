@@ -31,10 +31,12 @@ def name_match(merged, sci_name):
             if data['success']:
                 if data['matchType'] in ['exactMatch', 'canonicalMatch']:
                     if data['rank'] in ['species', 'subspecies']:
-                        good_matches.append(name)
-
-                        data_df = pd.DataFrame({"species": [name], "family": [data['family']]})
-                        matched_list = pd.concat([matched_list, data_df])
+                        if 'family' in data:
+                            good_matches.append(name)
+                            data_df = pd.DataFrame({"species": [name], "family": [data['family']]})
+                            matched_list = pd.concat([matched_list, data_df])
+                        else:
+                            pass
                     else:
                         insufficient_level.append(name)
                 else:
