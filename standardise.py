@@ -11,7 +11,7 @@ def polygonise(file_path):
     convert_to_polygon(file_path, preprocess_list, polygonise_list)
 
 
-def vector_standard(file_path, sci_name, spcode, from_raster=False):
+def standardise_shp(file_path, sci_name, spcode, from_raster=False):
     # Standardises and merges shapefiles present in supplied file directory
 
     # sci_name = (str) Name of column containing the scientific names of the species
