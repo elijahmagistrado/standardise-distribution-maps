@@ -38,7 +38,7 @@ The shapefile must be transformed to match a specific format to be processed cor
 `standardise_shp()` merges, reprojects, name matches, and filters all valid records into a single GeoDataFrame. Can also 
 clean up polygonised raster files by removing small holes and polygons that will not be visible in the final images.
 
-**Parameters**
+**Parameters:**
 * **file_path : str**
   * File directory containing the shapefiles.
 * **sci_name : str**
@@ -52,7 +52,7 @@ clean up polygonised raster files by removing small holes and polygons that will
 ### export_shp(gdf, file_name)
 Exports the GeoDataFrame into an ESRI shapefile (.shp)
 
-**Parameters**
+**Parameters:**
 * **gdf : GeoDataFrame**
   * Name of the object storing the GeoDataFrame created by `standardise_shp()`
 * **file_name : str**
