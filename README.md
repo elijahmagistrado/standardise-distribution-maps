@@ -5,6 +5,11 @@ functions to process both raster and vector data. The final output is a single E
 files `.cpg .dbf .prj .shx` containing layers of distribution maps of species present in the ALA. The shapefile (and all 
 of its components) must be compressed into a `.zip` file before uploading. 
 
+## Dependencies
+This package requires the following python packages to function:
+* `geopandas` (and all of its dependencies)
+* `requests`
+
 ## Preparing data for input
 The file uploaded to the ALA spatial service requires a single shapefile containing layers of distribution maps for each
 species. For the functions to work, the data has some requirements to work:
