@@ -3,7 +3,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 
-def create_name_list(file_path):
+def polygonise(file_path):
     # Creates the list of file names from directory to be used in the commands below
     # Detects rasters in the ESRI ASCII (.asc) format
     rasters = []
@@ -20,13 +20,9 @@ def create_name_list(file_path):
         desampled.append(f'{file_name}.tif')
         unmerged.append(f'{file_name}.shp')
 
-    return rasters, desampled, unmerged
-
-
-def command_list(rasters, desampled, unmerged):
     # Generates a list of commands to be executed in subprocess threads
-    preprocess_list = []    # List of gdalwarp commands
-    polygonise_list = []    # List of gdal_polygonize.py commands
+    preprocess_list = []  # List of gdalwarp commands
+    polygonise_list = []  # List of gdal_polygonize.py commands
 
     # Compression parameter used to reduce file size significantly
     compression = '-co COMPRESS=DEFLATE -co PREDICTOR=2 -co ZLEVEL=9'
@@ -40,22 +36,18 @@ def command_list(rasters, desampled, unmerged):
         preprocess_list.append(f'gdalwarp {desample_params} {compression} {input_r} {output_r}')
         polygonise_list.append(f'gdal_polygonize.py {output_r} -b 1 -f"ESRI Shapefile" {output_p} OUTPUT Taxon')
 
-    return preprocess_list, polygonise_list
-
-
-def convert_to_polygon(file_path, preprocess, polygonise):
     # Executes one command for each available thread simultaneously
-    def send_command(command):
-        subprocess.run(command, cwd=fr'{file_path}', shell=True)
+    def send_command(cmd):
+        subprocess.run(cmd, cwd=fr'{file_path}', shell=True)
 
     with ThreadPoolExecutor() as executor:
 
         # Executing gdalwarp commands
         # Outputs GeoTiff (.tif) file
-        for command in preprocess:
+        for command in preprocess_list:
             executor.submit(send_command, command)
 
         # Executes gdal_polygonize.py commands
         # Outputs a single ESRI shapefile (.shp) with separate parts
-        for command in polygonise:
+        for command in polygonise_list:
             executor.submit(send_command, command)
