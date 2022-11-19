@@ -1,8 +1,4 @@
-from merge import merge
-from name_match import name_match
-from assemble import assemble
-from raster import create_name_list, command_list, convert_to_polygon
-
+from preprocess import merge, name_match, assemble
 
 def polygonise(file_path):
     # Polygonises all ESRI ASCII (.asc) rasters in supplied file directory
