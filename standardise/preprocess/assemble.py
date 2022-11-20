@@ -4,7 +4,7 @@ import pandas as pd
 
 def assemble(sci_name, valid_records, matched_list, spcode):
     # Creating template of standardised GeoDataFrame
-    template = gpd.GeoDataFrame(
+    standard = gpd.GeoDataFrame(
         {c: pd.Series(dtype=t)
          for c, t in {
              "spcode": "int",
@@ -20,7 +20,7 @@ def assemble(sci_name, valid_records, matched_list, spcode):
     )
 
     # Setting active geometry column
-    template = template.set_geometry("the_geom")
+    standard = standard.set_geometry("the_geom")
 
     # Retrieving species and genus name from scientific name
     valid_records['genus'] = valid_records[sci_name].str.split(" ", expand=True)[0]
@@ -30,8 +30,6 @@ def assemble(sci_name, valid_records, matched_list, spcode):
     valid_records = valid_records.replace({'x': None, 'X': None, 'sp.': None})
 
     # Moving corrected values from dataset into the template
-    standard = template
-
     standard["spcode"] = range(spcode, spcode + len(valid_records))  # unique SPCODE > 30000
     standard["type"] = "e"  # for 'expert'
     standard["scientific"] = valid_records[sci_name]
