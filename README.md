@@ -1,4 +1,4 @@
-# expert-standard
+# standardise-distribution-maps
 ## Overview
 Used for standardising expert distribution maps to be added to the ALA spatial services. This package contains 
 functions to process both raster and vector data. The final output is a single ESRI shapefile `.shp` and its associated 
