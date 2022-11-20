@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='expert-standard',
+    name='standardise',
     version='1.0',
     packages=[''],
     url='',
