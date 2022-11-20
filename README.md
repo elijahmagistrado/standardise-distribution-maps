@@ -67,11 +67,10 @@ Exports the GeoDataFrame into an ESRI shapefile (.shp)
 
 ## Usage
 ```
-from expert-standard.standardise import polygonise, standardise_shp, export_shp
+from standardise import standardise_shp, export_shp
 
 
 # Starting with raster files
-polygonise(r'C:\Users\Bob\Rasters')
 standardised = standardise_shp(r'C:\Users\Bob\Rasters', 'Taxon', 31296, from_raster=True)
 standardised.export_shp(r'C:\Users\Bob\Output\standardised.shp')
 
