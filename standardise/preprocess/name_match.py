@@ -35,8 +35,6 @@ def name_match(merged, sci_name):
                             good_matches.append(name)
                             data_df = pd.DataFrame({"species": [name], "family": [data['family']]})
                             matched_list = pd.concat([matched_list, data_df])
-                        else:
-                            pass
                     else:
                         insufficient_level.append(name)
                 else:
@@ -57,8 +55,6 @@ def name_match(merged, sci_name):
         print(bad_matches)
         print(f'{len(insufficient_level)} record(s) not down to species or subspecies level:')
         print(insufficient_level)
-
-        valid_records = valid_records
 
     else:
         valid_records = merged
