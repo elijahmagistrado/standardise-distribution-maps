@@ -1,6 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 import os
+from dask_geopandas import from_geopandas
 from shapely.geometry import Polygon
 
 
@@ -30,10 +31,13 @@ def merge(file_path, sci_name, from_raster=False):
                 merged = pd.concat([merged, sf])
 
     # Grouping polygons of the same taxon to a multipolygon
-    merged = merged.dissolve(by=sci_name, as_index=False)
+    dask_merged = from_geopandas(merged, npartitions=8)
+    dask_merged = dask_merged.dissolve(by=sci_name)
+    dask_merged = dask_merged.reset_index()
 
     # Simplifying the snapefile to 0.05 degrees (~5.56 km) precision
-    merged['geometry'] = merged.simplify(0.05, preserve_topology=False)
+    dask_merged['geometry'] = dask_merged.simplify(0.05, preserve_topology=False)
+    merged = dask_merged.compute()
 
     return merged
 
