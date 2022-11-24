@@ -33,7 +33,7 @@ def merge(file_path, sci_name, from_raster=False):
     merged = merged.dissolve(by=sci_name, as_index=False)
 
     # Simplifying the snapefile to 0.05 degrees (~5.56 km) precision
-    merged['geometry'] = merged.simplify(0.05)
+    merged['geometry'] = merged.simplify(0.05, preserve_topology=False)
 
     return merged
 
