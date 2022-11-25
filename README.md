@@ -21,19 +21,6 @@ attribute table containing the scientific name.
 * Rasters must be in ESRI ASCII (.asc) format.
 * Shapefiles must be ESRI shapefile (.shp) format.
 
-## Raster conversion
-Distribution maps must be in ESRI shapefile (.shp) format. Raster distribution maps therefore must be converted into 
-shapefiles before it can be standardised. 
-
-### polygonise(file_path)
-
-The function `polygonise()` is used to convert all ESRI ASCII (.asc) raster files into shapefiles. Outputs shapefiles in
-the same directory supplied. Note that the column name containing the scientific names is called `Taxon`.
-
-**Parameters:**
-
-* **file_path : str**
-  * File directory containing rasters
 
 ## Standardising shapefiles
 The shapefile must be transformed to match a specific format to be processed correctly in the spatial service.
@@ -53,6 +40,7 @@ clean up polygonised raster files by removing small holes and polygons that will
 * **from_raster : bool**
   * Default value is `False`
   * `True` if shapefiles are the polygonised rasters using the `from_raster()` function.
+  * Calls `polygonise()` when `True`.
 
 ### export_shp(gdf, file_name)
 Exports the GeoDataFrame into an ESRI shapefile (.shp)
@@ -62,6 +50,20 @@ Exports the GeoDataFrame into an ESRI shapefile (.shp)
   * Name of the object storing the GeoDataFrame created by `standardise_shp()`
 * **file_name : str**
   * Destination of the shapefile including the desired file name. Must end with `.shp`
+
+## Raster conversion
+Distribution maps must be in ESRI shapefile (.shp) format. Raster distribution maps therefore must be converted into 
+shapefiles before it can be standardised. 
+
+### polygonise(file_path)
+
+The function `polygonise()` is used to convert all ESRI ASCII (.asc) raster files into shapefiles. Outputs shapefiles in
+the same directory supplied. This function is automatically called when `from_raster=True`
+
+**Parameters:**
+
+* **file_path : str**
+  * File directory containing rasters
 
 
 
