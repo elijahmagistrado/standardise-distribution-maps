@@ -7,10 +7,12 @@ def name_match(merged, sci_name):
     # Name matching records with API
     api_link = "https://namematching-ws.ala.org.au/api/searchByClassification"
 
+    # Function that sends individual get request
     async def submit_request(session, name):
         async with session.get(api_link, params={'scientificName': name}) as req:
             return name, await req.json()
 
+    # Creates a list of tasks then executes all simultaneously
     async def submit_all_requests(session, name_list):
         tasks = []
         for name in name_list:
@@ -19,6 +21,7 @@ def name_match(merged, sci_name):
         res = await asyncio.gather(*tasks)
         return res
 
+    # Sends the species names to be submitted to the API
     async def send_names():
         name_list = merged[sci_name].tolist()
 
@@ -26,6 +29,7 @@ def name_match(merged, sci_name):
             data = await submit_all_requests(session, name_list)
             return data
 
+    # Command that executes and receives data from async calls
     api_data = asyncio.run(send_names())
 
     matched_list = pd.DataFrame()
@@ -34,6 +38,7 @@ def name_match(merged, sci_name):
     bad_matches = []
     not_found = []
 
+    # Sorting out species by quality of name match
     for item in api_data:
         sp_name, sp_info = item
 
@@ -67,5 +72,6 @@ def name_match(merged, sci_name):
 
     else:
         valid_records = merged
+        print(f'All {len(merged)} records are valid.')
 
     return valid_records, matched_list
