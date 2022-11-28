@@ -24,9 +24,6 @@ def merge(file_path, sci_name, from_raster=False):
                     # Adding scientific name of species to the taxon column
                     sf[sci_name] = file.split('_currentF.shp')[0].replace('_', ' ')
 
-                # Reprojecting to WGS 84 to ensure standardisation
-                sf = sf.to_crs(epsg=4326)
-
                 # Compiling shapefiles into one
                 merged = pd.concat([merged, sf])
 
@@ -34,6 +31,9 @@ def merge(file_path, sci_name, from_raster=False):
     dask_merged = from_geopandas(merged, npartitions=8)
     dask_merged = dask_merged.dissolve(by=sci_name)
     dask_merged = dask_merged.reset_index()
+
+    # Reprojecting to WGS 84 to ensure standardisation
+    dask_merged = dask_merged.to_crs(epsg=4326)
 
     # Simplifying the snapefile to 0.05 degrees (~5.56 km) precision
     dask_merged['geometry'] = dask_merged.simplify(0.05, preserve_topology=False)
