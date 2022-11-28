@@ -34,9 +34,9 @@ def name_match(merged, sci_name):
 
     matched_list = pd.DataFrame()
     good_matches = []
-    insufficient_level = []
-    bad_matches = []
-    not_found = []
+    insufficient_level = []     # Not down to species or subspecies level
+    bad_matches = []           # Not 'exactMatch' or 'canonicalMatch'
+    not_found = []             # Species not in the ALA taxonomy
 
     # Sorting out species by quality of name match
     for item in api_data:
