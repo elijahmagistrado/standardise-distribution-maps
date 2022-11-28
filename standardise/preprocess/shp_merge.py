@@ -36,7 +36,7 @@ def merge(file_path, sci_name, from_raster=False):
     dask_merged = dask_merged.to_crs(epsg=4326)
 
     # Simplifying the snapefile to 0.05 degrees (~5.56 km) precision
-    dask_merged['geometry'] = dask_merged.simplify(0.05, preserve_topology=False)
+    dask_merged['geometry'] = dask_merged.simplify(0.05)
     merged = dask_merged.compute()
 
     return merged
