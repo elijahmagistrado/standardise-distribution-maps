@@ -10,7 +10,6 @@ This package requires the following python packages to function:
 * `geopandas` (and all of its dependencies)
 * `dask-geopandas`
 * `aiohttp`
-* `requests`
 
 ## Preparing data for input
 The file uploaded to the ALA spatial service requires a single shapefile containing layers of distribution maps for each
