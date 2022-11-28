@@ -8,6 +8,8 @@ of its components) must be compressed into a `.zip` file before uploading.
 ## Dependencies
 This package requires the following python packages to function:
 * `geopandas` (and all of its dependencies)
+* `dask-geopandas`
+* `aiohttp`
 * `requests`
 
 ## Preparing data for input
@@ -58,7 +60,7 @@ shapefiles before it can be standardised.
 ### polygonise(file_path)
 
 The function `polygonise()` is used to convert all ESRI ASCII (.asc) raster files into shapefiles. Outputs shapefiles in
-the same directory supplied. This function is automatically called when `from_raster=True`
+the same directory supplied. This function is automatically called when `from_raster=True`. 
 
 **Parameters:**
 
@@ -74,11 +76,11 @@ from standardise import standardise_shp, export_shp
 
 # Starting with raster files
 standardised = standardise_shp(r'C:\Users\Bob\Rasters', 'Taxon', 31296, from_raster=True)
-standardised.export_shp(r'C:\Users\Bob\Output\standardised.shp')
+export_shp(standardised, r'C:\Users\Bob\Rasters\standardised.shp')
 
 
 # Starting with shapefiles
 standardised = standardise_shp(r'C:\Users\Bob\Shapefiles', 'scientific_name', 33786)
-standardised.export_shp(r'C:\Users\Bob\Output\standardised.shp')
+export_shp(standardised, r'C:\Users\Bob\Shapefiles\standardised.shp')
 ```
 
